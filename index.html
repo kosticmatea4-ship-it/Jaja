@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Handy Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; font-family: sans-serif; }
+        canvas { display: block; background: #87CEEB; margin: 0 auto; }
+        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; }
+    </style>
+</head>
+<body>
+    <div id="score">Punkte: 0</div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let player = { x: canvas.width / 2, y: canvas.height - 100, size: 30, dy: 0, gravity: 0.6, jumpPower: -15 };
+    let platforms = [];
+
+    // Plattformen erstellen
+    function createPlatform(y) {
+        platforms.push({ x: Math.random() * (canvas.width - 70), y: y, w: 70, h: 15 });
+    }
+
+    for (let i = 0; i < 6; i++) {
+        createPlatform(i * (canvas.height / 6));
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Spieler zeichnen (gelbes Quadrat)
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+
+        // Plattformen zeichnen & Logik
+        ctx.fillStyle = "green";
+        platforms.forEach((p, index) => {
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+
+            // Kollision prüfen
+            if (player.dy > 0 && 
+                player.x < p.x + p.w && player.x + player.size > p.x &&
+                player.y + player.size > p.y && player.y + player.size < p.y + p.h) {
+                player.dy = player.jumpPower;
+                score++;
+                scoreElement.innerHTML = "Punkte: " + score;
+            }
+        });
+
+        // Schwerkraft
+        player.dy += player.gravity;
+        player.y += player.dy;
+
+        // Wenn Spieler fällt, Plattformen nach unten schieben
+        if (player.y < canvas.height / 2) {
+            let diff = canvas.height / 2 - player.y;
+            player.y = canvas.height / 2;
+            platforms.forEach(p => {
+                p.y += diff;
+                if (p.y > canvas.height) {
+                    p.y = 0;
+                    p.x = Math.random() * (canvas.width - 70);
+                }
+            });
+        }
+
+        // Steuerung (Touch)
+        canvas.addEventListener("touchstart", (e) => {
+            let touchX = e.touches[0].clientX;
+            if (touchX < canvas.width / 2) player.x -= 10;
+            else player.x += 10;
+        });
+
+        if (player.y > canvas.height) location.reload(); // Game Over
+        requestAnimationFrame(draw);
+    }
+    draw();
+</script>
+</body>
+</html>
